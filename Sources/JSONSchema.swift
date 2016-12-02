@@ -19,10 +19,10 @@ public enum Type: Swift.String {
 }
 
 extension String {
-  func stringByRemovingPrefix(_ prefix:String) -> String? {
+  func stringByRemovingPrefix(prefix:String) -> String? {
     if hasPrefix(prefix) {
-      let index = characters.index(startIndex, offsetBy: prefix.characters.count)
-      return substring(from: index)
+      let index = startIndex.advancedBy(prefix.characters.count)
+      return substringFromIndex(index)
     }
 
     return nil
@@ -38,9 +38,9 @@ public struct Schema {
   /// validation formats, currently private. If anyone wants to add custom please make a PR to make this public ;)
   let formats:[String:Validator]
 
-  let schema:[String:Any]
+  let schema:[String:AnyObject]
 
-  public init(_ schema:[String:Any]) {
+  public init(_ schema:[String:AnyObject]) {
     title = schema["title"] as? String
     description = schema["description"] as? String
 
@@ -64,6 +64,30 @@ public struct Schema {
     ]
   }
 
+  private static func convertStringToDictionary(text: String) -> AnyObject? {
+    if let data = text.dataUsingEncoding(NSUTF8StringEncoding) {
+      do {
+        return try NSJSONSerialization.JSONObjectWithData(data, options: [])
+      } catch let error as NSError {
+        print(error)
+      }
+    }
+    return nil
+  }
+  
+  public init(fromFile file: String, ofType: String) {
+    if let path = NSBundle.mainBundle().pathForResource(file, ofType: ofType)  {
+      if let schemaJSON = try? String(contentsOfFile: path)  {
+        if let dict = Schema.convertStringToDictionary(schemaJSON) as? [String:AnyObject] {
+          self.init(dict)
+          return
+        }
+      }
+    }
+    self.init([:])
+    return
+  }
+  
   public func validate(_ data:Any) -> ValidationResult {
     let validator = allOf(validators(self)(schema))
     let result = validator(data)
