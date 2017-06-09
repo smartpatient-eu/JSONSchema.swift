@@ -8,6 +8,7 @@
 
 import Foundation
 
+var isRelease = false
 
 public enum ValidationResult {
   case Valid
@@ -355,7 +356,7 @@ func validateProperties(_ properties: [String:Validator]?, patternProperties: [S
         }
       }
 
-      if let additionalProperties = additionalProperties {
+      if let additionalProperties = additionalProperties, !isRelease {
         let additionalKeys = value.keys.filter { !allKeys.contains($0) }
         results += additionalKeys.map { key in additionalProperties(value[key]!) }
       }

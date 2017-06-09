@@ -105,7 +105,7 @@ typealias Assertion = (String, () -> ())
 func makeAssertions(_ c:Case) -> ([Assertion]) {
   return c.tests.map { test -> Assertion in
     return ("\(c.description) \(test.description)", {
-      let result = validate(test.data, schema: c.schema)
+      let result = validate(test.data, schema: c.schema, release: false)
       switch result {
       case .Valid:
         XCTAssertEqual(result.valid, test.value, "Result is valid")
