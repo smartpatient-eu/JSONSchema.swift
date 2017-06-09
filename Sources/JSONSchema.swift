@@ -64,6 +64,30 @@ public struct Schema {
     ]
   }
 
+  private static func convertStringToDictionary(text: String) -> AnyObject? {
+    if let data = text.data(using: String.Encoding.utf8) {
+      do {
+        return try JSONSerialization.jsonObject(with: data, options: []) as AnyObject
+      } catch let error as NSError {
+        print(error)
+      }
+    }
+    return nil
+  }
+
+  public init(fromFile file: String, ofType: String) {
+    if let path = Bundle.main.path(forResource: file, ofType: ofType)  {
+      if let schemaJSON = try? String(contentsOfFile: path)  {
+        if let dict = Schema.convertStringToDictionary(text: schemaJSON) as? [String:AnyObject] {
+          self.init(dict)
+          return
+        }
+      }
+    }
+    self.init([:])
+    return
+  }
+
   public func validate(_ data:Any) -> ValidationResult {
     let validator = allOf(validators(self)(schema))
     let result = validator(data)
