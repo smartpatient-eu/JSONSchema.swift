@@ -88,7 +88,8 @@ public struct Schema {
     return
   }
 
-  public func validate(_ data:Any) -> ValidationResult {
+  public func validate(_ data:Any, release: Bool) -> ValidationResult {
+    isRelease = release
     let validator = allOf(validators(self)(schema))
     let result = validator(data)
     return result

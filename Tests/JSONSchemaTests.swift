@@ -36,11 +36,11 @@ class JSONSchemaTests: XCTestCase {
   }
 
   func testSuccessfulValidation() {
-    XCTAssertTrue(schema.validate([String:Any]()).valid)
+    XCTAssertTrue(schema.validate([String:Any](), release: false).valid)
   }
 
   func testUnsuccessfulValidation() {
-    XCTAssertFalse(schema.validate([String]()).valid)
+    XCTAssertFalse(schema.validate([String](), release: false).valid)
   }
 
   func testReadme() {
@@ -53,7 +53,7 @@ class JSONSchemaTests: XCTestCase {
       "required": ["name"],
     ])
 
-    XCTAssertTrue(schema.validate(["name": "Eggs", "price": 34.99]).valid)
-    XCTAssertFalse(schema.validate(["price": 34.99]).valid)
+    XCTAssertTrue(schema.validate(["name": "Eggs", "price": 34.99], release: false).valid)
+    XCTAssertFalse(schema.validate(["price": 34.99], release: false).valid)
   }
 }
