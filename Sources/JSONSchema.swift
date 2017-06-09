@@ -361,11 +361,10 @@ func validators(_ root: Schema) -> (_ schema: [String:Any]) -> [Validator] {
   }
 }
 
-public func validate(_ value:Any, schema:[String:Any], release: Bool) -> ValidationResult {
+public func validate(_ value:Any, schema:[String:Any]) -> ValidationResult {
   let root = Schema(schema)
   let validator = allOf(validators(root)(schema))
   let result = validator(value)
-  isRelease = release
   return result
 }
 
