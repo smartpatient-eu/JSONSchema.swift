@@ -11,7 +11,7 @@ import XCTest
 import JSONSchema
 
 func fixture(_ named:String, forObject:Any) -> Data {
-  let bundle = Bundle(for:object_getClass(forObject))
+  let bundle = Bundle(for:object_getClass(forObject)!)
   let path = bundle.url(forResource: named, withExtension: nil)!
   let data = try! Data(contentsOf: path)
   return data
@@ -41,13 +41,21 @@ class JSONSchemaCases: XCTestCase {
 
         // Optionals
         "bignum.json",
-        "format.json",
       ]
       return path.hasSuffix(".json") && !blacklist.contains(path)
     }
 
     let cases = suites.map { (file) -> [Case] in
       let suite = JSONFixture(file, forObject: self)
+
+      if file == "format.json" {
+        let cases = suite.map(makeCase(file))
+        return cases.filter {
+          let format = $0.schema["format"] as! String
+          return !["date-time", "email", "hostname"].contains(format)
+        }
+      }
+
       return suite.map(makeCase(file))
     }
 
@@ -107,7 +115,7 @@ func makeAssertions(_ c:Case) -> ([Assertion]) {
     return ("\(c.description) \(test.description)", {
       let result = validate(test.data, schema: c.schema)
       switch result {
-      case .Valid:
+      case .valid:
         XCTAssertEqual(result.valid, test.value, "Result is valid")
       case .invalid(let errors):
         XCTAssertEqual(result.valid, test.value, "Failed validation: \(errors)")
