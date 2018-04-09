@@ -92,7 +92,7 @@ public struct Schema {
   public func validate(_ data:Any, release: Bool) -> ValidationResult {
     isRelease = release
     let validator = allOf(validators(self)(schema))
-    let result = validator(data)
+    let result = validator(data, "")
     return result
   }
 
@@ -125,9 +125,9 @@ public struct Schema {
 
         return allOf(JSONSchema.validators(self)(schema))
       } else if reference == "" {
-        return { value in
+        return { value, path in
           let validators = JSONSchema.validators(self)(self.schema)
-          return allOf(validators)(value)
+          return allOf(validators)(value, "")
         }
       }
     }
@@ -220,9 +220,9 @@ func validators(_ root: Schema) -> (_ schema: [String:Any]) -> [Validator] {
     if let items = schema["items"] as? [String:Any] {
       let itemsValidators = allOf(JSONSchema.validators(root)(items))
 
-      func validateItems(_ document:Any) -> ValidationResult {
+      func validateItems(_ document:Any, _ path: String) -> ValidationResult {
         if let document = document as? [Any] {
-          return flatten(document.map(itemsValidators))
+          return flatten(document.map { itemsValidators($0, "\(path)") })
         }
 
         return .valid
@@ -246,16 +246,16 @@ func validators(_ root: Schema) -> (_ schema: [String:Any]) -> [Validator] {
       let additionalItemsValidator = createAdditionalItemsValidator(schema["additionalItems"])
       let itemValidators = items.map(JSONSchema.validators(root))
 
-      func validateItems(_ value:Any) -> ValidationResult {
+      func validateItems(_ value:Any, _ path: String) -> ValidationResult {
         if let value = value as? [Any] {
           var results = [ValidationResult]()
 
           for (index, element) in value.enumerated() {
             if index >= itemValidators.count {
-              results.append(additionalItemsValidator(element))
+              results.append(additionalItemsValidator(element, ""))
             } else {
               let validators = allOf(itemValidators[index])
-              results.append(validators(element))
+              results.append(validators(element, ""))
             }
           }
 
@@ -310,11 +310,11 @@ func validators(_ root: Schema) -> (_ schema: [String:Any]) -> [Validator] {
       validators.append(validateProperties(properties, patternProperties: patternProperties, additionalProperties: additionalPropertyValidator))
     }
 
-    func validateDependency(_ key: String, validator: @escaping Validator) -> (_ value: Any) -> ValidationResult {
-      return { value in
+    func validateDependency(_ key: String, validator: @escaping Validator) -> (_ value: Any, _ path: String) -> ValidationResult {
+      return { value, path in
         if let value = value as? [String:Any] {
           if (value[key] != nil) {
-            return validator(value)
+            return validator(value, "")
           }
         }
 
@@ -322,8 +322,8 @@ func validators(_ root: Schema) -> (_ schema: [String:Any]) -> [Validator] {
       }
     }
 
-    func validateDependencies(_ key: String, dependencies: [String]) -> (_ value: Any) -> ValidationResult {
-      return { value in
+    func validateDependencies(_ key: String, dependencies: [String]) -> (_ value: Any, _ path: String) -> ValidationResult {
+      return { value, path in
         if let value = value as? [String:Any] {
           if (value[key] != nil) {
             return flatten(dependencies.map { dependency in
@@ -365,7 +365,7 @@ func validators(_ root: Schema) -> (_ schema: [String:Any]) -> [Validator] {
 public func validate(_ value:Any, schema:[String:Any]) -> ValidationResult {
   let root = Schema(schema)
   let validator = allOf(validators(root)(schema))
-  let result = validator(value)
+  let result = validator(value,"")
   return result
 }
 
